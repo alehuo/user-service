@@ -2,36 +2,21 @@ import Knex from "knex";
 import Dao from "../interfaces/Dao";
 import UserDatabaseObject from "../interfaces/UserDatabaseObject";
 import { knexInstance } from "../Db";
-import _ from 'lodash'
+import _ from "lodash";
 
 const tableName = "users";
 
 class UserDao implements Dao<UserDatabaseObject> {
   public findOne(id: number): PromiseLike<UserDatabaseObject | undefined> {
-    return Promise.resolve(
-      knexInstance<UserDatabaseObject>(tableName)
-        .select()
-        .where({ id })
-        .first(),
-    );
+    return Promise.resolve(knexInstance<UserDatabaseObject>(tableName).select().where({ id }).first());
   }
 
   public findByUsername(username: string): PromiseLike<UserDatabaseObject | undefined> {
-    return Promise.resolve(
-      knexInstance<UserDatabaseObject>(tableName)
-        .select()
-        .where({ username })
-        .first(),
-    );
+    return Promise.resolve(knexInstance<UserDatabaseObject>(tableName).select().where({ username }).first());
   }
 
   public findByEmail(email: string): PromiseLike<UserDatabaseObject | undefined> {
-    return Promise.resolve(
-      knexInstance<UserDatabaseObject>(tableName)
-        .select()
-        .where({ email })
-        .first(),
-    );
+    return Promise.resolve(knexInstance<UserDatabaseObject>(tableName).select().where({ email }).first());
   }
 
   /**
@@ -61,15 +46,17 @@ class UserDao implements Dao<UserDatabaseObject> {
   }
 
   public findAll(fields?: string[], conditions?: string[]): PromiseLike<UserDatabaseObject[]> {
-    const query: Knex.QueryBuilder =
-      knexInstance<UserDatabaseObject>(tableName)
-        .select(`${tableName}.*`)
-        .leftOuterJoin(
-          knexInstance.raw("payments on (" + tableName + ".id = payments.payer_id and payments.valid_until > now())"),
-        );
+    const query: Knex.QueryBuilder = knexInstance<UserDatabaseObject>(tableName);
+
     if (fields) {
       query.select(fields);
+    } else {
+      query.select(`${tableName}.*`);
     }
+
+    query.leftOuterJoin(
+      knexInstance.raw("payments on (" + tableName + ".id = payments.payer_id and payments.valid_until > now())"),
+    );
 
     if (conditions) {
       conditions.forEach((cond: string, i: number) => {
@@ -98,11 +85,9 @@ class UserDao implements Dao<UserDatabaseObject> {
     // First, delete consents
     return knexInstance<UserDatabaseObject>("privacy_policy_consent_data")
       .delete()
-      .where({ user_id: id })
-      .then(result => {
-        return knexInstance<UserDatabaseObject>(tableName)
-          .delete()
-          .where({ id });
+      .where("user_id", id)
+      .then(_result => {
+        return knexInstance<UserDatabaseObject>(tableName).delete().where({ id });
       });
   }
 
@@ -131,11 +116,7 @@ class UserDao implements Dao<UserDatabaseObject> {
       ...entity,
       modified: new Date(),
     };
-    return Promise.resolve(
-      knexInstance<UserDatabaseObject>(tableName)
-        .update(savedObj)
-        .where({ id: entityId }),
-    );
+    return Promise.resolve(knexInstance<UserDatabaseObject>(tableName).update(savedObj).where({ id: entityId }));
   }
 
   public save(
